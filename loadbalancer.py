@@ -71,7 +71,7 @@ class loadbalancer:
     def _schedule(self):
 
         # bookkeeping
-        waitlist        = [] # message handles for pending worker groups 
+        waitlist        = [] # message handles for pending worker groups
         worker_groups   = [] # worker assigned
 
         # start by assigning Ngroups jobs to each of the Ngroup groups
@@ -120,22 +120,16 @@ class loadbalancer:
 
         # listen for job assignments from the scheduler
         while True:
-            self.comm.Recv(self.job_buff,source=0); job = self.job_buff[0]
-            if job < 0:
-                # job < 0 means no more jobs to do; return
-                return
-            else:
-                # received a message from scheduler with job >= 0
-                # call work function using group communicator and
-                # send non-blocking message on completion
-                self._workfunc(self.groupcomm,job)
-                self.comm.Isend(self.job_buff,dest=0)
+            self.comm.Recv(self.job_buff,source=0) # receive assignment from rank=0 scheduler
+            job = self.job_buff[0]                 # unpack job index
+            if job < 0: return                     # job < 0 means no more jobs to do
+            self._workfunc(self.groupcomm,job)     # call work function for job
+            self.comm.Isend(self.job_buff,dest=0)  # send non-blocking message on completion
 
     def run(self):
 
-        # main function of class, run scheduler on rank = 0
-        # and worker on all other ranks
+        # main function of class
         if self.rank==0:
-            self._schedule()
+            self._schedule() # run scheduler on rank = 0
         else:
-            self._work()
+            self._work()     # run worker on all other ranks
