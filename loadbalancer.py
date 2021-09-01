@@ -99,7 +99,7 @@ class loadbalancer:
                     Ncomplete += 1
                     waitlist.pop(i)
                     worker_groups.pop(i)
-                    if Ncomplete < self.Njobs:
+                    if nextjob < self.Njobs:
                         # more jobs to do; assign processes in group worker
                         # the job with index nextjob, increment, and beak to
                         # start the loop over the waitlist over again
@@ -123,6 +123,7 @@ class loadbalancer:
             self.comm.Recv(self.job_buff,source=0) # receive assignment from rank=0 scheduler
             job = self.job_buff[0]                 # unpack job index
             if job < 0: return                     # job < 0 means no more jobs to do
+            print(self.rank,'doing job',job,flush=True)
             self._workfunc(self.groupcomm,job)     # call work function for job
             self.comm.Isend(self.job_buff,dest=0)  # send non-blocking message on completion
 
